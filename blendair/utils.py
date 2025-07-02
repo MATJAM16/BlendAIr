@@ -51,6 +51,38 @@ class JobRunner(threading.Thread):
                 print("Job failed", e)
 
 
+class SupabasePoller(threading.Thread):
+    """Polls Supabase 'jobs' table for queued scripts and executes them."""
+    daemon = True
+
+    def run(self):
+        while True:
+            sb = get_supabase()
+            if not sb:
+                time.sleep(10)
+                continue
+            try:
+                res = (
+                    sb.table("jobs")
+                    .select("id, script")
+                    .eq("status", "queued")
+                    .limit(5)
+                    .execute()
+                )
+                for row in res.data or []:
+                    script = row.get("script")
+                    job_id = row.get("id")
+                    if script:
+                        enqueue_job({"func": exec, "args": (script,)})
+                        sb.table("jobs").update({"status": "running"}).eq("id", job_id).execute()
+                time.sleep(5)
+            except Exception as exc:
+                print("Supabase poller error", exc)
+                time.sleep(10)
+
+
 # Ensure there is one background runner
 if not any(isinstance(t, JobRunner) for t in threading.enumerate()):
     JobRunner().start()
+if not any(isinstance(t, SupabasePoller) for t in threading.enumerate()):
+    SupabasePoller().start()

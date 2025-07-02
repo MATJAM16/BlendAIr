@@ -3,9 +3,16 @@ Minimal but working scaffold that wires up operators, panels and preferences.
 """
 
 import importlib
-import bpy
+import sys
 
-from . import addon_prefs, operators, panels, gestures, blendluxcore_integration, mcp_client
+try:
+    import bpy
+except ModuleNotFoundError:  # Running outside Blender (e.g., tests)
+    from importlib import import_module
+    bpy = import_module('. _bpy_stub', __package__)  # type: ignore
+    sys.modules['bpy'] = bpy
+
+from . import addon_prefs, operators, panels, gestures, blendluxcore_integration, mcp_client, ui
 
 bl_info = {
     "name": "Blend(AI)r",
@@ -19,13 +26,24 @@ bl_info = {
     "category": "3D View",
 }
 
-modules = [addon_prefs, operators, panels, gestures, blendluxcore_integration, mcp_client]
+modules = [addon_prefs, operators, panels, gestures, blendluxcore_integration, mcp_client, ui]
 
 
 def register():
-    for m in modules:
-        importlib.reload(m)
-        m.register()
+    importlib.reload(addon_prefs)
+    importlib.reload(operators)
+    importlib.reload(panels)
+    importlib.reload(gestures)
+    importlib.reload(blendluxcore_integration)
+    importlib.reload(mcp_client)
+    importlib.reload(ui)
+    operators.register()
+    panels.register()
+    gestures.register()
+    blendluxcore_integration.register()
+    mcp_client.register()
+    addon_prefs.register()
+    ui.register()
 
 
 def unregister():
