@@ -7,7 +7,8 @@
 ## 🚀 What is Blend(AI)r?
 
 Blend(AI)r lets you control Blender with natural language prompts and hand gestures, backed by cloud storage and real-time job queues. It supports:
-- **Prompt-driven editing:** Type what you want (“Rotate 15°, add rugged plastic texture…”) and see it happen.
+- **Prompt-driven editing:** Type what you want ("Rotate 15°, add rugged plastic texture…") and see it happen, powered by your choice of the world's best LLMs (OpenAI, Gemini, HuggingFace, DeepSeek, Grok, Replicate, Anthropic, Perplexity, BlendAIr Cloud, or local).
+- **Voice input/output:** Speak prompts and hear results using free local or premium cloud voices (auto-selects best/lowest cost).
 - **Gesture control:** Use your webcam and hand signals to trigger actions.
 - **Supabase integration:** Sync models, renders, and jobs to the cloud.
 - **Optional BlenderMCP:** Advanced context and multi-agent workflows via the Model Context Protocol.
@@ -16,7 +17,9 @@ Blend(AI)r lets you control Blender with natural language prompts and hand gestu
 
 ## 🛠️ Features
 - Import/export OBJ/STL models to/from Supabase Storage
-- Prompt panel: send text to an LLM, receive and safely execute Blender Python
+- Prompt panel: send text to an LLM (auto-selects best model for code or general tasks), receive and safely execute Blender Python
+- Supports DeepSeek, Grok, Replicate, Anthropic, Perplexity, HuggingFace (StarCoder2-15B for code, Llama-3/Mixtral for general), OpenAI, Gemini, BlendAIr Cloud, and local LLMs
+- Voice input/output: local (Vosk, Piper) or cloud (OpenAI Whisper, ElevenLabs, etc.) auto-selected for quality/cost
 - Gesture recognition (MediaPipe Hands + OpenCV)
 - LuxCore render integration
 - Job queue: async prompt/gesture jobs, real-time status
@@ -46,9 +49,13 @@ Blender ≥ 3.6 ships with Python 3.10+. Install requirements:
 
 ### 4. Configure Preferences
 - **Supabase URL** and **Anon Key** (from your Supabase project)
-- **LLM endpoint:**
-    - For local dev: `http://localhost:8000/generate` (run `uvicorn local_llm_server.app:app --reload`)
-    - For production: use your deployed Supabase Edge Function URL
+- **LLM Provider:**
+    - Choose from: BlendAIr Cloud (paid), OpenAI, Gemini, HuggingFace, DeepSeek, Grok, Replicate, Anthropic, Perplexity, or your own local LLM server (Ollama, LM Studio, etc.)
+    - HuggingFace auto-selects the best model for code (StarCoder2-15B) or general (Llama-3/Mixtral)
+    - Enter your API key for each provider as needed
+- **Voice Input/Output:**
+    - Local (free, private, fast) or cloud (ultra-natural, may incur cost)
+    - Auto-selects best/lowest cost for BlendAIr Cloud users
 - **BlenderMCP URL** (optional)
 - **Gesture confidence threshold**
 
@@ -56,8 +63,10 @@ Blender ≥ 3.6 ships with Python 3.10+. Install requirements:
 
 ## 🖥️ Usage
 
-### 🆕 Floating Overlay Prompt Bar
+### 🅿️ Floating Overlay Prompt Bar
 - **Shortcut:** Press `Ctrl+Space` in the 3D Viewport to open the floating prompt bar overlay (always available, no sidebar required).
+- **Voice:** Click the 🎤 button to speak your prompt (uses best/cheapest voice input automatically)
+- **Provider:** Prompts are sent to the best LLM for the job (auto-selected for code/general)
 - **Type your command:** e.g., "Rotate selected object 45 degrees around Z".
 - **Press Enter:** The prompt is sent to the LLM and executed in Blender. Status and errors are shown in the overlay.
 - **ESC:** Dismisses the overlay.
@@ -125,11 +134,15 @@ pytest
 ---
 
 ## 🆘 Troubleshooting
-- **No response to prompt:** Check LLM endpoint in preferences, ensure server is running
-- **Supabase errors:** Double-check URL/key and that tables/buckets exist
-- **Gesture not detected:** Ensure webcam is enabled, MediaPipe and OpenCV installed
-- **LuxCore not rendering:** Enable BlendLuxCore in Blender’s add-ons
-- **MCP not connecting:** Check server URL and that it’s running
+
+If you encounter issues:
+- Ensure all dependencies are installed in Blender's Python (see Installation)
+- For prompt errors: check your API key, endpoint, and internet connectivity
+- For 'Use Prompt' errors: make sure you have selected a valid LLM provider and entered the correct API key. If using HuggingFace, the add-on will auto-select the best model (StarCoder2-15B for code, Llama-3/Mixtral for general). For BlendAIr Cloud, ensure your pay-as-you-go API key is active.
+- For gesture errors: check your webcam and MediaPipe install
+- For Supabase: verify your project URL and anon key
+- For voice: if local voice does not work, try switching to a cloud provider or check your microphone permissions
+- Check the [issues](https://github.com/Matjay007/BlendAIr/issues) or [discussions](https://github.com/Matjay007/BlendAIr/discussions) for help
 
 ---
 
@@ -144,9 +157,16 @@ MIT – see [LICENSE](LICENSE)
 
 ---
 
-## Credits
+## 🏆 Credits
+
 - [Supabase](https://supabase.com/)
-- [Blender](https://blender.org/)
+- [OpenAI](https://openai.com/)
+- [HuggingFace](https://huggingface.co/)
+- [DeepSeek](https://platform.deepseek.com/)
+- [Grok](https://grok.x.ai/)
+- [Replicate](https://replicate.com/)
+- [Anthropic](https://www.anthropic.com/)
+- [Perplexity](https://www.perplexity.ai/)
 - [MediaPipe](https://mediapipe.dev/)
 - [BlendLuxCore](https://luxcorerender.org/)
 - [BlenderMCP](https://github.com/ahujasid/blender-mcp)
