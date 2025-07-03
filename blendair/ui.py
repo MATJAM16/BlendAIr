@@ -31,6 +31,30 @@ def draw_prompt_bar(self, context):
     coords = [(20, height-50), (width-20, height-50), (width-20, height-20), (20, height-20)]
     batch = batch_for_shader(shader, 'TRI_FAN', {"pos": coords})
     batch.draw(shader)
+    # Draw LLM provider dropdown (simulate as text for now)
+    try:
+        from .addon_prefs import get_pref
+        provider = getattr(get_pref(), 'llm_provider', 'blendair_cloud')
+    except Exception:
+        provider = 'blendair_cloud'
+    provider_label = {
+        'blendair_cloud': 'BlendAIr Cloud',
+        'openai': 'OpenAI',
+        'gemini': 'Gemini',
+        'huggingface': 'HuggingFace',
+        'grok': 'Grok',
+        'deepseek': 'DeepSeek',
+        'local': 'Local',
+    }.get(provider, provider)
+    blf.position(0, width-250, height-38, 0)
+    blf.size(0, 16, 72)
+    blf.color(0, 0.7, 1, 1, 1)
+    blf.draw(0, f"LLM: {provider_label}")
+    # Draw gear/settings icon
+    blf.position(0, width-50, height-38, 0)
+    blf.size(0, 20, 72)
+    blf.color(0, 0.8, 0.8, 0.8, 1)
+    blf.draw(0, '\u2699')  # ⚙️
     # Draw prompt text
     blf.position(0, 35, height-38, 0)
     blf.size(0, 18, 72)
