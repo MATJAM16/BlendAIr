@@ -30,3 +30,9 @@ class BlenderMCPClient:
             r.raise_for_status()
         except Exception as exc:
             print("[BlendAIr] MCP push_result failed", exc)
+
+def register():
+    pass
+
+def unregister():
+    pass
