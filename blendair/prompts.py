@@ -11,7 +11,11 @@ def fetch_script(prompt: str) -> Optional[str]:
     url = ''
     data = {}
 
-    if provider == 'blendair_cloud':
+    # Only use llm_endpoint for 'local' provider
+    if provider == 'local':
+        url = getattr(prefs, 'local_llm_endpoint', 'http://localhost:8000/generate')
+        data = {"prompt": prompt}
+    elif provider == 'blendair_cloud':
         url = 'https://api.your-blendair-cloud.com/generate'  # Replace with your real endpoint
         key = getattr(prefs, 'blendair_api_key', None)
         if not key:

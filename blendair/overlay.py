@@ -85,10 +85,28 @@ def draw_overlay(self, context):
     blf.position(0, caret_x, y+h-28, 0)
     blf.draw(0, '|')
     # Status
-    blf.position(0, x+18, y+8, 0)
+    blf.position(0, x+18, y+h-45, 0)
     blf.size(0, 12, 72)
     blf.color(0, 0.7, 0.7, 0.7, 1)
     blf.draw(0, overlay_state['status'])
+    # Voice and gesture icons (right side)
+    icon_y = y+h-32
+    mic_x = x+w-60
+    hand_x = x+w-32
+    blf.position(0, mic_x, icon_y, 0)
+    blf.size(0, 22, 72)
+    blf.color(0, 0.85, 0.85, 0.2, 1)
+    blf.draw(0, '\U0001F3A4')  # 🎤 microphone
+    blf.position(0, hand_x, icon_y, 0)
+    blf.size(0, 22, 72)
+    blf.color(0, 0.4, 0.85, 1, 1)
+    blf.draw(0, '\U0001F590')  # 🖐️ hand
+    # Optionally, draw gesture status
+    gesture_status = overlay_state.get('gesture_status', 'off')
+    blf.position(0, hand_x-32, icon_y, 0)
+    blf.size(0, 12, 72)
+    blf.color(0, 0.7, 0.7, 0.7, 1)
+    blf.draw(0, f"{'ON' if gesture_status=='on' else 'OFF'}")
     # Autocomplete
     if overlay_state['autocomplete']:
         for i, opt in enumerate(overlay_state['autocomplete'][:5]):
