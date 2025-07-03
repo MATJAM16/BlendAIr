@@ -102,9 +102,82 @@ class BLENDAIR_OT_MCPUpdate(bpy.types.Operator):
         from .mcp_client import BlenderMCPClient
         client = BlenderMCPClient()
         client.push_result(job_id="demo", payload={"status": "done"})
-        return {'FINISHED'}
+        self.report({'INFO'}, "Result pushed to MCP")
         return {'FINISHED'}
 
+
+class BLENDAIR_OT_RestoreHistory(bpy.types.Operator):
+    bl_idname = "blendair.restore_history"
+    bl_label = "Restore Prompt State"
+    history_id: bpy.props.StringProperty()
+    def execute(self, context):
+        from . import history
+        entries = history.get_prompt_history(limit=100)
+        entry = next((e for e in entries if str(e.get('id')) == self.history_id), None)
+        if entry:
+            context.scene.blendair_prompt = entry.get('prompt','')
+            self.report({'INFO'}, "Prompt restored")
+        else:
+            self.report({'ERROR'}, "History entry not found")
+        return {'FINISHED'}
+
+class BLENDAIR_OT_FavoriteHistory(bpy.types.Operator):
+    bl_idname = "blendair.favorite_history"
+    bl_label = "Favorite Prompt"
+    history_id: bpy.props.StringProperty()
+    def execute(self, context):
+        from . import history
+        try:
+            history.update_prompt_favorite(self.history_id, True)
+            self.report({'INFO'}, "Favorited!")
+        except Exception as e:
+            self.report({'ERROR'}, f"Favorite failed: {e}")
+        return {'FINISHED'}
+
+class BLENDAIR_OT_CopyHistory(bpy.types.Operator):
+    bl_idname = "blendair.copy_history"
+    bl_label = "Copy Prompt/Response"
+    history_id: bpy.props.StringProperty()
+    def execute(self, context):
+        from . import history
+        entries = history.get_prompt_history(limit=100)
+        entry = next((e for e in entries if str(e.get('id')) == self.history_id), None)
+        if entry:
+            text = f"Prompt: {entry.get('prompt','')}\nResponse: {entry.get('response','')}"
+            context.window_manager.clipboard = text
+            self.report({'INFO'}, "Copied to clipboard")
+        else:
+            self.report({'ERROR'}, "History entry not found")
+        return {'FINISHED'}
+
+class BLENDAIR_OT_DeleteHistory(bpy.types.Operator):
+    bl_idname = "blendair.delete_history"
+    bl_label = "Delete Prompt History"
+    history_id: bpy.props.StringProperty()
+    def execute(self, context):
+        from . import history
+        try:
+            history.delete('prompt_history', {'id': f'eq.{self.history_id}'})
+            self.report({'INFO'}, "Deleted history entry")
+        except Exception as e:
+            self.report({'ERROR'}, f"Delete failed: {e}")
+        return {'FINISHED'}
+
+class BLENDAIR_OT_GoBackHistory(bpy.types.Operator):
+    bl_idname = "blendair.goback_history"
+    bl_label = "Go Back to This Point"
+    history_id: bpy.props.StringProperty()
+    def execute(self, context):
+        from . import history
+        from . import ui
+        prev = history.go_back()
+        if prev:
+            ui.prompt_bar_state['text'] = prev.get('prompt', '')
+            ui.prompt_bar_state['caret'] = len(ui.prompt_bar_state['text'])
+            self.report({'INFO'}, "Restored previous prompt.")
+        else:
+            self.report({'WARNING'}, "No previous prompt to restore.")
+        return {'FINISHED'}
 
 classes = [
     BLENDAIR_OT_ExecutePrompt,

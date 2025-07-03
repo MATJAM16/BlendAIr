@@ -9,9 +9,7 @@ import bpy
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
-from bpy.props import StringProperty, BoolProperty
 
-# Addon-wide state (could be moved to WindowManager props)
 prompt_bar_state = {
     'visible': False,
     'text': '',
@@ -46,24 +44,45 @@ def draw_prompt_bar(self, context):
         'deepseek': 'DeepSeek',
         'local': 'Local',
     }.get(provider, provider)
-    blf.position(0, width-250, height-38, 0)
-    blf.size(0, 16, 72)
-    blf.color(0, 0.7, 1, 1, 1)
-    blf.draw(0, f"LLM: {provider_label}")
+    blf.position(font_id, width-250, height-38, 0)
+    blf.size(font_id, 16, 72)
+    blf.color(font_id, 0.7, 1, 1, 1)
+    blf.draw(font_id, f"LLM: {provider_label}")
     # Draw gear/settings icon
-    blf.position(0, width-50, height-38, 0)
-    blf.size(0, 20, 72)
-    blf.color(0, 0.8, 0.8, 0.8, 1)
-    blf.draw(0, '\u2699')  # ⚙️
+    blf.position(font_id, width-50, height-38, 0)
+    blf.size(font_id, 20, 72)
+    blf.color(font_id, 0.8, 0.8, 0.8, 1)
+    blf.draw(font_id, '\u2699')  # 
     # Draw prompt text
-    blf.position(0, 35, height-38, 0)
-    blf.size(0, 18, 72)
-    blf.color(0, 1, 1, 1, 1)
-    blf.draw(0, prompt_bar_state['text'])
+    blf.position(font_id, 35, height-38, 0)
+    blf.size(font_id, 18, 72)
+    blf.color(font_id, 1, 1, 1, 1)
+    blf.draw(font_id, prompt_bar_state['text'])
     # Draw caret
-    caret_x = 35 + blf.dimensions(0, prompt_bar_state['text'][:prompt_bar_state['caret']])[0]
-    blf.position(0, caret_x, height-38, 0)
-    blf.draw(0, '|')
+    caret_x = 35 + blf.dimensions(font_id, prompt_bar_state['text'][:prompt_bar_state['caret']])[0]
+    blf.position(font_id, caret_x, height-38, 0)
+    blf.draw(font_id, '|')
+    # Draw Send button (rectangle + text)
+    send_x, send_y, send_w, send_h = width-120, height-45, 60, 25
+    shader.uniform_float("color", (0.2, 0.7, 1, 0.9))
+    send_coords = [(send_x, send_y), (send_x+send_w, send_y), (send_x+send_w, send_y+send_h), (send_x, send_y+send_h)]
+    send_batch = batch_for_shader(shader, 'TRI_FAN', {"pos": send_coords})
+    send_batch.draw(shader)
+    blf.position(font_id, send_x+10, send_y+6, 0)
+    blf.size(font_id, 16, 72)
+    blf.color(font_id, 1, 1, 1, 1)
+    blf.draw(font_id, "Send")
+    blf.draw(0, "Send")
+    # Draw mic (voice) icon
+    blf.position(0, width-190, height-38, 0)
+    blf.size(0, 18, 72)
+    blf.color(0, 0.8, 1, 0.8, 1)
+    blf.draw(0, '\U0001F3A4')  # 🎤
+    # Draw hand (gesture) icon
+    blf.position(0, width-170, height-38, 0)
+    blf.size(0, 18, 72)
+    blf.color(0, 1, 0.8, 0.8, 1)
+    blf.draw(0, '\U0001F590')  # 🖐️
     # Draw status
     blf.position(0, 35, height-60, 0)
     blf.size(0, 12, 72)
@@ -106,11 +125,109 @@ class PromptBarModalOperator(bpy.types.Operator):
             prompt_bar_state['visible'] = False
             update_status('')
             return {'FINISHED'}
+        # Mouse click handling for overlay controls
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            x, y = event.mouse_region_x, event.mouse_region_y
+            region = context.region
+            width, height = region.width, region.height
+            # Onboarding/help icon
+            info_x, info_y, info_w, info_h = width-280, height-45, 24, 24
+            scene = context.scene
+            if not getattr(scene, 'blendair_onboarding_complete', False):
+                if info_x <= x <= info_x+info_w and info_y <= y <= info_y+info_h:
+                    bpy.ops.blendair.onboarding('INVOKE_DEFAULT')
+                    return {'RUNNING_MODAL'}
+            # Send button
+            send_x, send_y, send_w, send_h = width-120, height-45, 60, 25
+            if send_x <= x <= send_x+send_w and send_y <= y <= send_y+send_h:
+                from . import prompts
+                prompt = prompt_bar_state['text']
+                update_status('Sending prompt...')
+                script = prompts.fetch_script(prompt)
+                # Log prompt and response to history
+                try:
+                    from . import history
+                    history.log_prompt(
+                        user_id='local',
+                        project_id=getattr(context.scene, 'blendair_project', 'demo'),
+                        prompt=prompt,
+                        response=script,
+                        provider=provider_label,
+                        model='',
+                        token_usage=None,
+                        cost_usd=None,
+                        latency_ms=None,
+                        previous_id=None
+                    )
+                except Exception as e:
+                    print(f"[BlendAIr] History log failed: {e}")
+                if script:
+                    try:
+                        exec(script, {'bpy': bpy})
+                        update_status('Success!')
+                    except Exception as e:
+                        update_status(f'Exec error: {e}')
+                else:
+                    update_status('Failed to fetch script.')
+                prompt_bar_state['visible'] = False
+                return {'FINISHED'}
+            # Mic icon (🎤)
+            mic_x, mic_y, mic_w, mic_h = width-190, height-38, 18, 18
+            if mic_x <= x <= mic_x+mic_w and mic_y-10 <= y <= mic_y+mic_h:
+                prompt_bar_state.setdefault('voice_active', False)
+                prompt_bar_state['voice_active'] = not prompt_bar_state['voice_active']
+                if prompt_bar_state['voice_active']:
+                    update_status('Voice mode: ON (not yet implemented)')
+                else:
+                    update_status('Voice mode: OFF')
+                # TODO: Implement voice input logic
+                return {'RUNNING_MODAL'}
+            # Hand icon (🖐️)
+            hand_x, hand_y, hand_w, hand_h = width-170, height-38, 18, 18
+            if hand_x <= x <= hand_x+hand_w and hand_y-10 <= y <= hand_y+hand_h:
+                try:
+                    from . import gestures
+                    gestures.toggle_gesture_listener()
+                    if getattr(gestures, 'is_gesture_active', False):
+                        update_status('Gesture mode: ON')
+                    else:
+                        update_status('Gesture mode: OFF')
+                except Exception as e:
+                    update_status(f'Gesture error: {e}')
+                return {'RUNNING_MODAL'}
         if event.type == 'RET' and event.value == 'PRESS':
             from . import prompts
             prompt = prompt_bar_state['text']
             update_status('Sending prompt...')
             script = prompts.fetch_script(prompt)
+            # Log prompt and response to history
+            try:
+                from .addon_prefs import get_pref
+                from . import history
+                provider = getattr(get_pref(), 'llm_provider', 'blendair_cloud')
+                provider_label = {
+                    'blendair_cloud': 'BlendAIr Cloud',
+                    'openai': 'OpenAI',
+                    'gemini': 'Gemini',
+                    'huggingface': 'HuggingFace',
+                    'grok': 'Grok',
+                    'deepseek': 'DeepSeek',
+                    'local': 'Local',
+                }.get(provider, provider)
+                history.log_prompt(
+                    user_id='local', # TODO: use real user/session id
+                    project_id=getattr(context.scene, 'blendair_project', 'demo'),
+                    prompt=prompt,
+                    response=script,
+                    provider=provider_label,
+                    model='',
+                    token_usage=None,
+                    cost_usd=None,
+                    latency_ms=None,
+                    previous_id=None
+                )
+            except Exception as e:
+                print(f"[BlendAIr] History log failed: {e}")
             if script:
                 try:
                     exec(script, {'bpy': bpy})

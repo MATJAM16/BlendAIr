@@ -35,6 +35,68 @@ create table if not exists public.jobs (
   status text default 'queued' check (status in ('queued','running','done','error')),
   result_path text,
   created_at timestamp with time zone default now(),
+  completed_at timestamp with time zone
+);
+
+-- prompt_history: stores all prompts and responses for audit, undo, and analytics
+create table if not exists public.prompt_history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  project_id uuid references public.projects(id) on delete cascade,
+  prompt text not null,
+  response text,
+  provider text,
+  model text,
+  token_usage integer,
+  cost_usd numeric(10,4),
+  latency_ms integer,
+  previous_id uuid references public.prompt_history(id),
+  next_id uuid references public.prompt_history(id),
+  created_at timestamp with time zone default now()
+);
+
+-- gesture_history: logs all gesture events for analytics/undo
+create table if not exists public.gesture_history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  project_id uuid references public.projects(id) on delete cascade,
+  gesture text not null,
+  created_at timestamp with time zone default now()
+);
+
+-- user_prefs: onboarding, UI state, last used project, etc.
+create table if not exists public.user_prefs (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  default_llm text,
+  theme text default 'auto',
+  onboarding_complete boolean default false,
+  last_used_project uuid references public.projects(id),
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+-- api_usage: for billing, analytics, limits
+create table if not exists public.api_usage (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  provider text,
+  model text,
+  tokens integer,
+  cost_usd numeric(10,4),
+  created_at timestamp with time zone default now()
+);
+
+-- project_members: for team workflows/collaboration
+create table if not exists public.project_members (
+  project_id uuid references public.projects(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
+  role text check (role in ('owner','editor','viewer')) default 'editor',
+  added_at timestamp with time zone default now(),
+  primary key (project_id, user_id)
+);
+
+-- End advanced Blend(AI)r schema upgrades
+  created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
 
