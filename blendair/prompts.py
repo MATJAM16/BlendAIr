@@ -11,7 +11,7 @@ def fetch_script(prompt: str) -> Optional[str]:
     url = ''
     data = {}
 
-    # Only use llm_endpoint for 'local' provider
+    # Only use local_llm_endpoint for 'local' provider
     if provider == 'local':
         url = getattr(prefs, 'local_llm_endpoint', 'http://localhost:8000/generate')
         data = {"prompt": prompt}
@@ -56,9 +56,6 @@ def fetch_script(prompt: str) -> Optional[str]:
             return None
         headers['Authorization'] = f'Bearer {key}'
         data = {"inputs": prompt}
-    elif provider == 'local':
-        url = getattr(prefs, 'local_llm_endpoint', 'http://localhost:8000/generate')
-        data = {"prompt": prompt}
     elif provider == 'anthropic':
         url = 'https://api.anthropic.com/v1/messages'
         key = getattr(prefs, 'anthropic_api_key', None)
