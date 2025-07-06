@@ -1,63 +1,36 @@
 import bpy
+from bpy.types import Panel
 
-
-class BLENDAIR_PT_MainPanel(bpy.types.Panel):
+class BLENDAIR_PT_Sidebar(Panel):
     bl_label = "Blend(AI)r"
-    bl_idname = "BLENDAIR_PT_main"
+    bl_idname = "BLENDAIR_PT_sidebar"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Blend(AI)r'
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        from .addon_prefs import get_pref
-        prefs = get_pref()
-        if not getattr(scene, 'blendair_onboarding_complete', False):
-            box = layout.box()
-            box.label(text="👋 Welcome to BlendAIr!", icon='INFO')
-            box.label(text="Get started in seconds:")
-            box.operator("blendair.onboarding", text="Complete Onboarding", icon='CHECKMARK').tooltip = "Complete the onboarding process to get started with BlendAIr."
-            box.operator("blendair.show_prompt_bar", text="Show Prompt Bar", icon='GREASEPENCIL').tooltip = "Open the floating overlay prompt bar to send AI requests."
-            layout.separator()
-        layout.label(text="Prompt History:", icon='PREVIEW_RANGE').tooltip = "View, restore, favorite, copy, delete, or undo previous prompts and responses."
-        layout.label(text="LLM Provider:", icon='INFO')
-        layout.prop(prefs, "llm_provider", text="").tooltip = "Choose your preferred Large Language Model provider."
-        # API key status
-        provider = getattr(prefs, 'llm_provider', 'blendair_cloud')
-        key_status = False
-        if provider == 'blendair_cloud':
-            key_status = bool(prefs.blendair_api_key)
-        elif provider == 'openai':
-            key_status = bool(prefs.openai_api_key)
-        elif provider == 'gemini':
-            key_status = bool(prefs.gemini_api_key)
-        elif provider == 'huggingface':
-            key_status = bool(prefs.huggingface_api_key)
-        elif provider == 'grok':
-            key_status = bool(prefs.grok_api_key)
-        elif provider == 'deepseek':
-            key_status = bool(prefs.deepseek_api_key)
-        elif provider == 'local':
-            key_status = bool(prefs.local_llm_endpoint)
-        layout.label(text=f"API Key: {'✅' if key_status else '❌'}")
-        layout.operator("wm.show_preferences", text="Configure API Keys", icon='PREFERENCES')
-        layout.separator()
-        layout.prop(scene, "blendair_project", text="Project")
-        layout.separator()
-        layout.prop(scene, "blendair_prompt")
-        layout.operator("blendair.download_model", icon='IMPORT')
-        layout.operator("blendair.render", icon='RENDER_STILL')
-        layout.operator("blendair.mcp_fetch", icon='FILE_REFRESH')
-        layout.prop(scene, "blendair_use_mcp", text="Use BlenderMCP")
-        # Supabase config check
-        supabase_ok = bool(getattr(prefs, 'supabase_url', '')) and bool(getattr(prefs, 'supabase_key', ''))
-        if not supabase_ok:
-            layout.label(text="Supabase not configured!", icon='ERROR')
-            layout.operator("wm.show_preferences", text="Configure Supabase", icon='PREFERENCES')
-        layout.operator("blendair.upload_model", icon='EXPORT')
-        layout.separator()
-        layout.operator("blendair.execute_prompt", text="Run Prompt", icon='PLAY').prompt = scene.blendair_prompt
+        wm = context.window_manager
+        layout.prop(wm, 'blendair_current_prompt', text="Prompt")
+        row = layout.row()
+        row.operator('blendair.execute_prompt', text="Run Prompt", icon='PLAY')
+        layout.label(text=wm.get('blendair_status', 'Ready'), icon='INFO')
+
+def register():
+    bpy.utils.register_class(BLENDAIR_PT_Sidebar)
+    if not hasattr(bpy.types.WindowManager, 'blendair_current_prompt'):
+        bpy.types.WindowManager.blendair_current_prompt = bpy.props.StringProperty(
+            name="Current Prompt", default="")
+    if not hasattr(bpy.types.WindowManager, 'blendair_status'):
+        bpy.types.WindowManager.blendair_status = bpy.props.StringProperty(
+            name="Status", default="Ready")
+
+def unregister():
+    bpy.utils.unregister_class(BLENDAIR_PT_Sidebar)
+    if hasattr(bpy.types.WindowManager, 'blendair_current_prompt'):
+        del bpy.types.WindowManager.blendair_current_prompt
+    if hasattr(bpy.types.WindowManager, 'blendair_status'):
+        del bpy.types.WindowManager.blendair_status
         op.prompt = "Rotate 15 degrees"
 
 
@@ -106,19 +79,14 @@ class BLENDAIR_PT_PromptHistory(bpy.types.Panel):
             ops = row.row(align=True)
             r = ops.operator('blendair.restore_history', text='', icon='FILE_REFRESH')
             r.history_id = str(entry.get('id',''))
-            r.tooltip = "Restore this prompt and response to the prompt bar."
             f = ops.operator('blendair.favorite_history', text='', icon=icon_fav)
             f.history_id = str(entry.get('id',''))
-            f.tooltip = "Mark this prompt as a favorite."
             c = ops.operator('blendair.copy_history', text='', icon='COPYDOWN')
             c.history_id = str(entry.get('id',''))
-            c.tooltip = "Copy prompt and response to clipboard."
             d = ops.operator('blendair.delete_history', text='', icon='TRASH')
             d.history_id = str(entry.get('id',''))
-            d.tooltip = "Delete this prompt history entry."
             g = ops.operator('blendair.go_back_history', text='', icon='LOOP_BACK')
             g.history_id = str(entry.get('id',''))
-            g.tooltip = "Undo to this point in the prompt history."
 
 from .addon_prefs import get_pref
 from .operators import (

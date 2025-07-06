@@ -1,63 +1,25 @@
-"""Utility helpers: Supabase client, job queue, logging."""
-import threading
-import time
-import queue
-from pathlib import Path
-from typing import Callable, Any, Dict, Optional
-
-try:
-    from supabase import create_client, Client  # type: ignore
-except ImportError:
-    Client = Any  # type: ignore
-    create_client = None  # type: ignore
-
 import bpy
-from .addon_prefs import get_pref
+import traceback
+from pathlib import Path
+from functools import wraps
 
-_job_q: "queue.Queue[Dict[str, Any]]" = queue.Queue()
+def log_error(exc):
+    log_path = Path(bpy.app.tempdir) / "blendair.log"
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write("\n---\n")
+        traceback.print_exc(file=f)
+    print(f"[BlendAIr] Error logged to {log_path}")
 
-
-def get_supabase() -> Optional["Client"]:
-    prefs = get_pref()
-    if create_client and prefs.supabase_url and prefs.supabase_key:
-        return create_client(prefs.supabase_url, prefs.supabase_key)
-    return None
-
-
-def enqueue_job(job: Dict[str, Any]):
-    _job_q.put(job)
-
-
-class JobRunner(threading.Thread):
-    daemon = True
-
-    def run(self):
-        while True:
-            try:
-                job = _job_q.get(timeout=1)
-            except queue.Empty:
-                continue
-            self.process_job(job)
-            _job_q.task_done()
-
-    def process_job(self, job: Dict[str, Any]):
-        # For now, just print; production: write to Supabase
-        print("Processing job", job)
-        func: Callable[..., Any] = job.get("func")
-        if callable(func):
-            try:
-                func(*job.get("args", []), **job.get("kwargs", {}))
-            except Exception as e:
-                print("Job failed", e)
-
-
-class SupabasePoller(threading.Thread):
-    """Polls Supabase 'jobs' table for queued scripts and executes them."""
-    daemon = True
-
-    def run(self):
-        while True:
-            sb = get_supabase()
+def safe_exec(func):
+    @wraps(func)
+    def wrapper(self, context, *args, **kwargs):
+        try:
+            return func(self, context, *args, **kwargs)
+        except Exception as exc:
+            log_error(exc)
+            self.report({'ERROR'}, f"BlendAIr: {exc}")
+            return {'CANCELLED'}
+    return wrapper
             if not sb:
                 time.sleep(10)
                 continue

@@ -1,35 +1,36 @@
 import bpy
-import requests
-import textwrap
-from .utils import enqueue_job, get_supabase
-from .addon_prefs import get_pref
+import threading
+from .prompts import send_prompt
+from .utils import safe_exec
 
-
-class BLENDAIR_OT_ExecutePrompt(bpy.types.Operator):
-    """Send prompt to LLM endpoint and execute returned code"""
+class EXECUTE_OT_prompt(bpy.types.Operator):
     bl_idname = "blendair.execute_prompt"
-    bl_label = "Execute Prompt"
+    bl_label = "Run Prompt"
+    bl_description = "Send prompt to LLM and execute result"
 
-    prompt: bpy.props.StringProperty(name="Prompt", default="Rotate 15 degrees")
-
+    @safe_exec
     def execute(self, context):
-        prefs = get_pref()
-        try:
-            resp = requests.post(prefs.llm_endpoint, json={"prompt": self.prompt}, timeout=30)
-            resp.raise_for_status()
-            code = resp.json().get("script", "")
-        except Exception as e:
-            self.report({'ERROR'}, f"Failed to fetch script: {e}")
-            return {'CANCELLED'}
-        # Basic sandbox: dedent and disallow import os, subprocess
-        safe_code = textwrap.dedent(code)
-        if any(bad in safe_code for bad in ["import os", "import subprocess", "open("]):
-            self.report({'ERROR'}, "Unsafe code detected")
-            return {'CANCELLED'}
-        # schedule code execution
-        enqueue_job({"func": exec, "args": (safe_code,)})
-        self.report({'INFO'}, "Prompt queued")
+        wm = context.window_manager
+        prompt = wm.blendair_current_prompt
+        wm.blendair_status = "Sending prompt..."
+        def run():
+            try:
+                code = send_prompt(prompt)
+                if code:
+                    exec(code, {'bpy': bpy})
+                    wm.blendair_status = "Success!"
+                else:
+                    wm.blendair_status = "No code returned."
+            except Exception as e:
+                wm.blendair_status = f"Error: {e}"
+        threading.Thread(target=run, daemon=True).start()
         return {'FINISHED'}
+
+def register():
+    bpy.utils.register_class(EXECUTE_OT_prompt)
+
+def unregister():
+    bpy.utils.unregister_class(EXECUTE_OT_prompt)
 
 
 class BLENDAIR_OT_UploadModel(bpy.types.Operator):
