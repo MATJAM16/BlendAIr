@@ -1,8 +1,7 @@
 supabase
 opencv-python
 mediapipe
-blendluxcore
-blender-mcp-client
+
 pytest
 fastapi
 uvicorn
