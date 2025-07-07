@@ -1,7 +1,13 @@
 import bpy
 import traceback
+import threading
 from pathlib import Path
 from functools import wraps
+
+# --- THREAD MANAGEMENT ---
+# Global list to hold running background threads and an event to signal them to stop.
+running_threads = []
+stop_event = threading.Event()
 
 def log_error(exc):
     log_path = Path(bpy.app.tempdir) / "blendair.log"
@@ -43,8 +49,4 @@ def safe_exec(func):
                 time.sleep(10)
 
 
-# Ensure there is one background runner
-if not any(isinstance(t, JobRunner) for t in threading.enumerate()):
-    JobRunner().start()
-if not any(isinstance(t, SupabasePoller) for t in threading.enumerate()):
-    SupabasePoller().start()
+

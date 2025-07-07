@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -23,7 +23,7 @@ jobs:
       - name: Package add-on
         run: zip -r blendair.zip blendair
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: blendair-addon
           path: blendair.zip
