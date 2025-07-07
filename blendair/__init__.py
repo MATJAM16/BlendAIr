@@ -32,6 +32,11 @@ CLASSES = [
     operators.BLENDAIR_OT_CopyHistory,
     operators.BLENDAIR_OT_DeleteHistory,
     operators.BLENDAIR_OT_GoBackHistory,
+    operators.BLENDAIR_OT_UploadModel,
+    operators.BLENDAIR_OT_DownloadModel,
+    operators.BLENDAIR_OT_Render,
+    operators.BLENDAIR_OT_MCPFetch,
+    operators.BLENDAIR_OT_MCPUpdate,
 
     # Panels & UI
     panels.BLENDAIR_PT_MainPanel,

@@ -1,7 +1,7 @@
 import bpy
 import threading
 from .prompts import send_prompt
-from .utils import safe_exec
+from .utils import safe_exec, get_supabase, enqueue_job
 
 class BLENDAIR_OT_ExecutePrompt(bpy.types.Operator):
     """Send prompt to LLM and execute the returned Python code."""
