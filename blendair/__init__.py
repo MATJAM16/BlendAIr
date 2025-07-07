@@ -22,14 +22,22 @@ from . import addon_prefs, deps, operators, panels, blenderkit
 
 # This list is the single source of truth for all add-on classes.
 CLASSES = [
-    # Core
+    # Core / Preferences
     addon_prefs.BlendAirAddonPreferences,
+
     # Operators
     operators.BLENDAIR_OT_ExecutePrompt,
+    operators.BLENDAIR_OT_RestoreHistory,
+    operators.BLENDAIR_OT_FavoriteHistory,
+    operators.BLENDAIR_OT_CopyHistory,
+    operators.BLENDAIR_OT_DeleteHistory,
+    operators.BLENDAIR_OT_GoBackHistory,
+
     # Panels & UI
     panels.BLENDAIR_PT_MainPanel,
     panels.BLENDAIR_PT_PromptPanel,
     panels.BLENDAIR_PT_PromptHistory,
+
     # BlenderKit Integration
     blenderkit.BlendAirBKitAsset,
     blenderkit.BLENDAIR_OT_BKitSearch,
