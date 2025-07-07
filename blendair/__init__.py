@@ -16,17 +16,58 @@ bl_info = {
 }
 
 import bpy
-from . import panels, operators, addon_prefs, deps, blenderkit
+from . import addon_prefs, deps, operators, panels, blenderkit
+
+# --- REGISTRATION --- #
+
+# This list is the single source of truth for all add-on classes.
+CLASSES = [
+    # Core
+    addon_prefs.BlendAirAddonPreferences,
+    # Operators
+    operators.BLENDAIR_OT_ExecutePrompt,
+    # Panels & UI
+    panels.BLENDAIR_PT_MainPanel,
+    panels.BLENDAIR_PT_PromptPanel,
+    panels.BLENDAIR_PT_PromptHistory,
+    # BlenderKit Integration
+    blenderkit.BlendAirBKitAsset,
+    blenderkit.BLENDAIR_OT_BKitSearch,
+    blenderkit.BLENDAIR_OT_BKitImport,
+    blenderkit.BLENDAIR_PT_BlenderKitPanel,
+    blenderkit.BLENDAIR_UL_BKitAssets,
+]
 
 def register():
+    """Register all add-on classes and properties."""
     deps.check_and_prompt_install()
-    addon_prefs.register()
-    operators.register()
-    panels.register()
-    blenderkit.register()
+
+    for cls in CLASSES:
+        bpy.utils.register_class(cls)
+
+    # Register scene properties
+    bpy.types.Scene.blendair_prompt = bpy.props.StringProperty(
+        name="BlendAIr Prompt",
+        description="Enter your prompt for the AI",
+        default=""
+    )
+    bpy.types.Scene.blendair_status = bpy.props.StringProperty(
+        name="BlendAIr Status",
+        default="Ready"
+    )
+    # BlenderKit properties
+    bpy.types.Scene.blendair_bkit_query = bpy.props.StringProperty(name="BlenderKit Query", default="")
+    bpy.types.Scene.blendair_bkit_assets = bpy.props.CollectionProperty(type=blenderkit.BlendAirBKitAsset)
+    bpy.types.Scene.blendair_bkit_asset_index = bpy.props.IntProperty(name="Asset Index", default=0)
 
 def unregister():
-    blenderkit.unregister()
-    panels.unregister()
-    operators.unregister()
-    addon_prefs.unregister()
+    """Unregister all add-on classes and properties in reverse order."""
+    for cls in reversed(CLASSES):
+        bpy.utils.unregister_class(cls)
+
+    # Unregister scene properties
+    del bpy.types.Scene.blendair_prompt
+    del bpy.types.Scene.blendair_status
+    del bpy.types.Scene.blendair_bkit_query
+    del bpy.types.Scene.blendair_bkit_assets
+    del bpy.types.Scene.blendair_bkit_asset_index

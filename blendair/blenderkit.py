@@ -58,22 +58,4 @@ class BlendAirBKitAsset(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
     asset_id: bpy.props.StringProperty()
 
-def register():
-    bpy.utils.register_class(BLENDAIR_PT_BlenderKitPanel)
-    bpy.utils.register_class(BLENDAIR_OT_BKitSearch)
-    bpy.utils.register_class(BLENDAIR_OT_BKitImport)
-    bpy.utils.register_class(BLENDAIR_UL_BKitAssets)
-    bpy.utils.register_class(BlendAirBKitAsset)
-    bpy.types.Scene.blendair_bkit_query = bpy.props.StringProperty(name="BlenderKit Query", default="")
-    bpy.types.Scene.blendair_bkit_assets = bpy.props.CollectionProperty(type=BlendAirBKitAsset)
-    bpy.types.Scene.blendair_bkit_asset_index = bpy.props.IntProperty(name="Asset Index", default=0)
 
-def unregister():
-    bpy.utils.unregister_class(BLENDAIR_PT_BlenderKitPanel)
-    bpy.utils.unregister_class(BLENDAIR_OT_BKitSearch)
-    bpy.utils.unregister_class(BLENDAIR_OT_BKitImport)
-    bpy.utils.unregister_class(BLENDAIR_UL_BKitAssets)
-    bpy.utils.unregister_class(BlendAirBKitAsset)
-    del bpy.types.Scene.blendair_bkit_query
-    del bpy.types.Scene.blendair_bkit_assets
-    del bpy.types.Scene.blendair_bkit_asset_index

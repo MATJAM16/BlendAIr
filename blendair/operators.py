@@ -3,34 +3,40 @@ import threading
 from .prompts import send_prompt
 from .utils import safe_exec
 
-class EXECUTE_OT_prompt(bpy.types.Operator):
+class BLENDAIR_OT_ExecutePrompt(bpy.types.Operator):
+    """Send prompt to LLM and execute the returned Python code."""
     bl_idname = "blendair.execute_prompt"
     bl_label = "Run Prompt"
-    bl_description = "Send prompt to LLM and execute result"
+    bl_description = "Sends the current prompt to the selected LLM and executes the returned code"
 
     @safe_exec
     def execute(self, context):
-        wm = context.window_manager
-        prompt = wm.blendair_current_prompt
-        wm.blendair_status = "Sending prompt..."
-        def run():
+        scene = context.scene
+        prompt = scene.blendair_prompt
+        
+        if not prompt:
+            self.report({'WARNING'}, "Prompt is empty.")
+            return {'CANCELLED'}
+            
+        scene.blendair_status = "Sending prompt..."
+
+        def _run_in_thread():
+            """The actual prompt execution, run in a separate thread to avoid blocking the UI."""
             try:
                 code = send_prompt(prompt)
                 if code:
                     exec(code, {'bpy': bpy})
-                    wm.blendair_status = "Success!"
+                    scene.blendair_status = "Success!"
                 else:
-                    wm.blendair_status = "No code returned."
+                    scene.blendair_status = "No code returned from AI."
             except Exception as e:
-                wm.blendair_status = f"Error: {e}"
-        threading.Thread(target=run, daemon=True).start()
+                scene.blendair_status = f"Error: {e}"
+                print(f"BlendAIr Error: {e}")
+
+        thread = threading.Thread(target=_run_in_thread, daemon=True)
+        thread.start()
+        self.report({'INFO'}, "Prompt sent. Running in background.")
         return {'FINISHED'}
-
-def register():
-    bpy.utils.register_class(EXECUTE_OT_prompt)
-
-def unregister():
-    bpy.utils.unregister_class(EXECUTE_OT_prompt)
 
 
 class BLENDAIR_OT_UploadModel(bpy.types.Operator):
@@ -179,22 +185,3 @@ class BLENDAIR_OT_GoBackHistory(bpy.types.Operator):
         else:
             self.report({'WARNING'}, "No previous prompt to restore.")
         return {'FINISHED'}
-
-classes = [
-    BLENDAIR_OT_ExecutePrompt,
-    BLENDAIR_OT_UploadModel,
-    BLENDAIR_OT_DownloadModel,
-    BLENDAIR_OT_Render,
-    BLENDAIR_OT_MCPFetch,
-    BLENDAIR_OT_MCPUpdate,
-]
-
-
-def register():
-    for c in classes:
-        bpy.utils.register_class(c)
-
-
-def unregister():
-    for c in reversed(classes):
-        bpy.utils.unregister_class(c)
