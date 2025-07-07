@@ -149,3 +149,13 @@ def fetch_script(prompt: str) -> Optional[str]:
     except Exception as e:
         print(f"[BlendAIr] Failed to fetch script: {e}")
         return None
+
+
+# -----------------------------------------------------------------------------
+# Public helper used by operators and tests
+# -----------------------------------------------------------------------------
+
+def send_prompt(prompt: str):
+    """Thin wrapper around fetch_script for external callers."""
+    return fetch_script(prompt)
+
