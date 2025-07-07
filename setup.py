@@ -11,6 +11,5 @@ setup(
         "supabase",
         "opencv-python",
         "mediapipe",
-        "blendluxcore",
     ],
 )
