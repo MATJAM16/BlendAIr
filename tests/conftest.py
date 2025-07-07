@@ -81,6 +81,7 @@ def _install_fake_bpy():
             "data": SimpleNamespace(),
             "context": SimpleNamespace(scene=SimpleNamespace()),
             "ops": SimpleNamespace(),
+            "app": SimpleNamespace(tempdir="/tmp"),
         }
     )
 

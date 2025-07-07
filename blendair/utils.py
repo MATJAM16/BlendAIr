@@ -20,6 +20,9 @@ from typing import Any, Optional, Final
 try:
     import bpy  # type: ignore
     IN_BLENDER: Final = True
+    # Ensure required attributes exist for tests
+    if not hasattr(bpy, "app"):
+        bpy.app = SimpleNamespace(tempdir="/tmp")  # type: ignore
 except ModuleNotFoundError:
     bpy = SimpleNamespace(app=SimpleNamespace(tempdir="/tmp"))  # type: ignore
     IN_BLENDER = False  # type: ignore
