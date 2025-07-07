@@ -42,8 +42,21 @@ def register():
     """Register all add-on classes and properties."""
     deps.check_and_prompt_install()
 
+    print("--- Registering BlendAIr --- ")
     for cls in CLASSES:
-        bpy.utils.register_class(cls)
+        try:
+            bpy.utils.register_class(cls)
+            print(f"Registered class: {cls.__name__}")
+        except Exception as e:
+            print(f"\n--- BLENDAIR REGISTRATION ERROR ---")
+            print(f"Failed to register class: {cls.__name__}")
+            print(f"Error: {e}")
+            import traceback
+            traceback.print_exc()
+            print("-------------------------------------\n")
+            # Unregister all previously registered classes before failing
+            unregister()
+            return
 
     # Register scene properties
     bpy.types.Scene.blendair_prompt = bpy.props.StringProperty(
@@ -62,8 +75,18 @@ def register():
 
 def unregister():
     """Unregister all add-on classes and properties in reverse order."""
+    print("--- Unregistering BlendAIr --- ")
     for cls in reversed(CLASSES):
-        bpy.utils.unregister_class(cls)
+        try:
+            bpy.utils.unregister_class(cls)
+            print(f"Unregistered class: {cls.__name__}")
+        except Exception as e:
+            print(f"\n--- BLENDAIR UNREGISTRATION ERROR ---")
+            print(f"Failed to unregister class: {cls.__name__}")
+            print(f"Error: {e}")
+            import traceback
+            traceback.print_exc()
+            print("---------------------------------------\n")
 
     # Unregister scene properties
     del bpy.types.Scene.blendair_prompt
