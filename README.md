@@ -26,7 +26,8 @@ Blend(AI)r lets you control Blender with natural language prompts and hand gestu
 - Optional: connect to BlenderMCP for multi-agent context
 - Fully tested, CI/CD, MIT license
 
----
+---<img width="1536" height="1024" alt="blendair ai" src="https://github.com/user-attachments/assets/9a57dac2-4ddb-4ff0-a45d-cbff4f36107a" />
+
 
 ## 📦 Installation
 
@@ -59,7 +60,8 @@ Blender ≥ 3.6 ships with Python 3.10+. Install requirements:
 - **BlenderMCP URL** (optional)
 - **Gesture confidence threshold**
 
----
+---![Uploading Untitled.png…]()
+
 
 ## 🖥️ Usage
 
